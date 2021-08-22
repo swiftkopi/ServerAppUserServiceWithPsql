@@ -1,4 +1,3 @@
-
 import Vapor
 import Redis
 import Fluent
@@ -10,15 +9,7 @@ struct AuthController: RouteCollection {
         let globalUserAuthRoutesGroup = routes.grouped("user","auth")
         let globalUserAuthMiddlewareGroup = globalUserAuthRoutesGroup.grouped(authMiddleware)
         globalUserAuthMiddlewareGroup.post("login", use: loginHandler)
-        globalUserAuthRoutesGroup.post("authenticate", use: authenticationGlobalUserHandler)
-        
-        
-        let superUserAuthRoutesGroup = routes.grouped("superuser", "auth")
-        let superUserAuthMiddlewareGroup = superUserAuthRoutesGroup.grouped(authMiddleware)
-        superUserAuthMiddlewareGroup.post("login", use: loginHandler)
-        superUserAuthRoutesGroup.post("authenticate", use: authenticationSuperUserHandler)
-
-        
+        globalUserAuthRoutesGroup.post("authenticate", use: authenticationUserHandler)
     }
     
     func loginHandler(_ req: Request) throws -> EventLoopFuture<Token> {
@@ -35,7 +26,7 @@ struct AuthController: RouteCollection {
     
    
     
-    func authenticationGlobalUserHandler(_ req: Request) throws -> EventLoopFuture<User.GlobalAuth> {
+    func authenticationUserHandler(_ req: Request) throws -> EventLoopFuture<User.GlobalAuth> {
         
         let data = try req.content.decode(AuthenticateData.self)
         //debug
@@ -63,40 +54,6 @@ struct AuthController: RouteCollection {
                     .convertToGlobalAuth()
             }
     }
-
-    
-    func authenticationSuperUserHandler(_ req: Request) throws -> EventLoopFuture<User.GlobalAuth> {
-        let data = try req.content.decode(AuthenticateData.self)
-        //debug
-        print("\n","DATA-AUTH_HANDLER:",data, "\n")
-    
-        return req.redis
-            .get(RedisKey(data.token), asJSON: Token.self)
-            .flatMap { token in
-                guard let token = token else {
-                    return req.eventLoop.future(error: Abort(.unauthorized))
-                }
-                
-                //debug
-                print("\n","AUTH_CONTROLLER-TOKEN_USERID:", token.userId,"\n",
-                     "\n", "AUTH_CONTROLLER-TOKEN_TOKEN_STRING:", token.tokenString ,"\n",
-                      "\n", "AUTH_CONTROLLER-TOKEN_USERNAME:", token.username ,"\n")
-                
-                return User
-                    .query(on: req.db)
-                    .filter(\.$id == token.userId)
-                    .filter(\.$username == token.username)
-                    .filter(\.$role_id == 1)
-                    .first()
-                    .unwrap(or: Abort(.notFound))
-                    .convertToGlobalAuth()
-            
-          
-            }
-    }
-    
-    
-    
 }
 
 struct AuthenticateData: Content {

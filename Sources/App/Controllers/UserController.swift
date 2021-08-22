@@ -1,20 +1,12 @@
-//
-//  File.swift
-//  
-//
-//  Created by San Engineer on 15/08/21.
-//
-
 import Vapor
 import Redis
 import Fluent
 
-struct RegularUserController: RouteCollection {
+struct UserController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let userRouteGroup = routes.grouped("user")
         let userRouteMiddlewareGroup = userRouteGroup.grouped(UserAuthMiddleware())
      
-        
         userRouteGroup.post("auth","register", use: createUser)
         userRouteMiddlewareGroup.get(":id", use: getOneUser)
         userRouteMiddlewareGroup.put(":id", use: updateUserBio)

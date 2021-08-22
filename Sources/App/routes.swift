@@ -43,12 +43,7 @@ func routes(_ app: Application) throws {
     
     app.logger.logLevel = .debug
     app.http.server.configuration.hostname = serverHostname
-    
-    app.migrations.add(CreateSchemaUser(), AddSomeColumn(), UpdateDataTypeGeoLoc(), DeleteGeoLocOldDataType(), AddGenderDobColumn(), CreateSchemaRoles(), AddSomeColumnOnSchemaUserPart2())
-    
-    try app.autoMigrate().wait()
-    try app.register(collection: UsersController())
-    try app.register(collection: RegularUserController())
+    try app.register(collection: UserController())
     try app.register(collection: AuthController())
     
 }
